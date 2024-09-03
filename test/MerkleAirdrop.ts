@@ -3,7 +3,6 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 import { keccak256, solidityPacked } from "ethers";
 import { MerkleTree } from "merkletreejs";
-import { describe, it } from "mocha";
 
 describe("MerkleAirdrop", function () {
   async function deployFixture() {

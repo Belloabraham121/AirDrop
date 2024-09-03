@@ -1,141 +1,64 @@
-import {
-  time,
-  loadFixture,
-} from "@nomicfoundation/hardhat-toolbox/network-helpers";
-import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
+import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { expect } from "chai";
-import hre, { ethers } from "hardhat";
+import { ethers } from "hardhat";
+import { keccak256 } from "ethers";
+import { solidityPacked } from "ethers";
+import { MerkleTree } from "merkletreejs";
+import fs from "fs";
+import path from "path";
 
 describe("MerkleAirdrop", function () {
-  // We define a fixture to reuse the same setup in every test.
-  // We use loadFixture to run this setup once, snapshot that state,
-  // and reset Hardhat Network to that snapshot in every test.
-  async function deployToken() {
-    // Contracts are deployed using the first signer/account by default
-    const [owner, otherAccount] = await hre.ethers.getSigners();
+  async function deployFixture() {
+    const [owner, addr1, addr2, addr3] = await ethers.getSigners();
 
-    const erc20Token = await hre.ethers.getContractFactory("MCBELLIE");
-    const token = await erc20Token.deploy();
+    // Deploy ERC20 token
+    const Mcbellie = await ethers.getContractFactory("Mcbellie");
+    const token = await Mcbellie.deploy();
 
-    return { token };
+    // Load proofs from file
+    const proofs = JSON.parse(fs.readFileSync(path.join(__dirname, "proofs.json"), "utf8"));
+
+    // Create merkle tree
+    const leaves = [
+      { address: addr1.address, amount: ethers.parseEther("100") },
+      { address: addr2.address, amount: ethers.parseEther("200") },
+      { address: addr3.address, amount: ethers.parseEther("300") },
+    ].map((x) => keccak256(solidityPacked(["address", "uint256"], [x.address, x.amount])));
+
+    const merkleTree = new MerkleTree(leaves, keccak256, { sortPairs: true });
+    const root = merkleTree.getHexRoot();
+
+    // Deploy MerkleAirdrop
+    const MerkleAirdrop = await ethers.getContractFactory("MerkleAirdrop");
+    const airdrop = await MerkleAirdrop.deploy(await token.getAddress(), root);
+
+    // Transfer tokens to the airdrop contract
+    await token.transfer(await airdrop.getAddress(), ethers.parseEther("1000"));
+
+    return { token, airdrop, owner, addr1, addr2, addr3, merkleTree, proofs };
   }
 
-  async function deployAirdrop() {
-    // Contracts are deployed using the first signer/account by default
-    const [owner, otherAccount] = await hre.ethers.getSigners();
+  it("Should allow valid claims", async function () {
+    const { airdrop, addr1, proofs } = await loadFixture(deployFixture);
 
-    const { token } = await loadFixture(deployToken)
+    const proof = proofs[addr1.address];
 
-    const saveERC20 = await hre.ethers.getContractFactory("MerkleAirdrop");
-    const saveErc20 = await saveERC20.deploy(token);
+    await expect(airdrop.connect(addr1).ClaimAirdrop(proof, ethers.parseEther("100")))
+      .to.emit(airdrop, "AirdropClaimed")
+      .withArgs(addr1.address, ethers.parseEther("100"));
+  });
 
-    return { saveErc20, owner, otherAccount, token };
-  }
+  it("Should prevent double claims", async function () {
+    const { airdrop, addr1, proofs } = await loadFixture(deployFixture);
 
-//   describe("Deployment", function () {
-//     it("Should check if owner is correct", async function () {
-//       const { saveErc20, owner } = await loadFixture(deploySaveERC20);
+    const proof = proofs[addr1.address];
 
-//       expect(await saveErc20.owner()).to.equal(owner);
-//     });
+    // First claim should succeed
+    await airdrop.connect(addr1).ClaimAirdrop(proof, ethers.parseEther("100"));
 
-//     it("Should check if tokenAddress is correctly set", async function () {
-//       const { saveErc20, owner, token } = await loadFixture(deploySaveERC20);
-
-//       expect(await saveErc20.tokenAddress()).to.equal(token);
-//     });
-//   });
-
-//   describe("Deposit", function () {
-//     it("Should deposit successfully", async function () {
-//       const { saveErc20, owner, otherAccount, token } = await loadFixture(deploySaveERC20);
-
-//       // Transfer erc20 tokens from the owner to otherAccount
-//       const trfAmount = ethers.parseUnits("100", 18);
-//       await token.transfer(otherAccount, trfAmount);
-//       expect(await token.balanceOf(otherAccount)).to.equal(trfAmount);
-
-//       // using otherAccount to approve the SaveErc20 contract to spend token
-//       await token.connect(otherAccount).approve(saveErc20, trfAmount);
-
-//       const otherAccountBalBefore = await token.balanceOf(otherAccount);
-
-//       const depositAmount = ethers.parseUnits("10", 18);
-
-//       // Using the otherAccount to call the deposit function
-//       await saveErc20.connect(otherAccount).deposit(depositAmount);
-
-//       expect(await token.balanceOf(otherAccount)).to.equal(otherAccountBalBefore - depositAmount);
-
-//       expect(await saveErc20.connect(otherAccount).myBalance()).to.equal(depositAmount);
-//       expect(await saveErc20.getContractBalance()).to.equal(depositAmount);
-//     });
-
-//     it("Should emit an event after successful deposit", async function () {
-//       const { saveErc20, otherAccount, token } = await loadFixture(deploySaveERC20);
-
-//       const trfAmount = ethers.parseUnits("100", 18);
-//       await token.transfer(otherAccount, trfAmount);
-
-//       await token.connect(otherAccount).approve(saveErc20, trfAmount);
-
-//       const depositAmount = ethers.parseUnits("10", 18);
-
-//       await expect(saveErc20.connect(otherAccount).deposit(depositAmount))
-//         .to.emit(saveErc20, "DepositSuccessful")
-//         .withArgs(otherAccount.address, depositAmount);
-//     });
-
-
-//     it("Should revert on zero deposit", async function () {
-//       const { saveErc20, otherAccount, token } = await loadFixture(deploySaveERC20);
-
-//       const depositAmount = ethers.parseUnits("0", 18);
-
-//       await expect(
-//         saveErc20.connect(otherAccount).deposit(depositAmount)
-//       ).to.be.revertedWithCustomError(saveErc20, "ZeroValueNotAllowed");
-//     });
-//   });
-
-
-//   describe("Withdraw", function () {
-//     it("Should deposit successfully", async function () {
-//       const { saveErc20, owner, otherAccount, token } = await loadFixture(deploySaveERC20);
-
-//       // Transfer ERC20 token from owner to otherAccount
-//       const trfAmount = ethers.parseUnits("100", 18);
-//       await token.transfer(otherAccount, trfAmount);
-//       expect(await token.balanceOf(otherAccount)).to.equal(trfAmount);
-
-//       // otherAccount approves contract address to spend some tokens
-//       await token.connect(otherAccount).approve(saveErc20, trfAmount);
-
-//       const otherAccountBalBefore = await token.balanceOf(otherAccount);
-
-//       // otherAccount deposits into SaveERC20 contract
-//       const depositAmount = ethers.parseUnits("10", 18);
-
-//       await saveErc20.connect(otherAccount).deposit(depositAmount);
-
-//       expect(await token.balanceOf(otherAccount)).to.equal(otherAccountBalBefore - depositAmount);
-
-//       expect(await saveErc20.connect(otherAccount).myBalance()).to.equal(depositAmount);
-//       expect(await saveErc20.getContractBalance()).to.equal(depositAmount);
-
-//       // otherAccount withdraw from contract
-//       const initBalBeforeWithdrawal = await token.balanceOf(otherAccount);
-//       const withdrawAmount = ethers.parseUnits("5", 18);
-
-//       await saveErc20.connect(otherAccount).withdraw(withdrawAmount);
-
-//       const balAfterWithdrawal = await token.balanceOf(otherAccount);
-
-//       expect(await saveErc20.getContractBalance()).to.equal(depositAmount - withdrawAmount);
-
-//       expect(await saveErc20.connect(otherAccount).myBalance()).to.equal(depositAmount - withdrawAmount);
-      
-//       expect(await token.balanceOf(otherAccount)).to.equal(initBalBeforeWithdrawal + withdrawAmount);
-//     });
-//   });
+    // Second claim should fail
+    await expect(
+      airdrop.connect(addr1).ClaimAirdrop(proof, ethers.parseEther("100"))
+    ).to.be.revertedWith("Address has already claimed");
+  });
 });
