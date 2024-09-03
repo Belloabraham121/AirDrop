@@ -23,4 +23,4 @@ for (let i = 0; i < 10; i++) {
 // Write to CSV file
 fs.writeFileSync('airdrop.csv', data.join('\n'));
 
-console.log('Sample airdrop data has been generated in airdrop_sample.csv');
+console.log('Sample airdrop data has been generated in airdrop.csv');

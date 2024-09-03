@@ -21,7 +21,7 @@ fs.createReadStream('airdrop.csv')
     const root = tree.getHexRoot();
     console.log('Merkle Root:', root);
 
-    // Optional: Save proofs for each address
+    // Save proofs for each address
     const proofs: { [key: string]: string[] } = {};
     leaves.forEach((leaf, index) => {
       const proof = tree.getHexProof(leaf);
