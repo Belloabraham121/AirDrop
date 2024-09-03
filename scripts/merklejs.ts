@@ -13,7 +13,7 @@ const leaves: Buffer[] = [];
 fs.createReadStream('airdrop.csv')
   .pipe(csv())
   .on('data', (row: AirdropData) => {
-    const leaf = keccak256(Buffer.from(row.address + row.amount));
+    const leaf = keccak256(`${row.address},${row.amount}`);
     leaves.push(leaf);
   })
   .on('end', () => {

@@ -3,6 +3,7 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 import { keccak256, solidityPacked } from "ethers";
 import { MerkleTree } from "merkletreejs";
+import { StandardMerkleTree } from "@openzeppelin/merkle-tree";
 
 describe("MerkleAirdrop", function () {
   async function deployFixture() {

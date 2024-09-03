@@ -26,16 +26,20 @@ contract MerkleAirdrop is Ownable{
     
 
 
-    function ClaimAirdrop(bytes32[] memory proof,uint256 amount) public {
+    function ClaimAirdrop(bytes32[] memory proof, uint256 amount) public {
         require(!hasClaimed[msg.sender], "Address has already claimed");
-
+    
         bytes32 leaf = keccak256(bytes.concat(keccak256(abi.encode(msg.sender, amount))));
-
+    
         require(MerkleProof.verify(proof, merkleRoot, leaf), "Invalid proof");
-
+    
+        // Mark the address as claimed before transferring tokens
+        hasClaimed[msg.sender] = true;
+    
         IERC20(token).transfer(msg.sender, amount);
         emit AirdropClaimed(msg.sender, amount);
     }
+    
 
     function withdrawRemainingTokens() external onlyOwner {
         uint256 balance = token.balanceOf(address(this));
