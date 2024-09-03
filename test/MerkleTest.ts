@@ -4,7 +4,7 @@ import { ethers } from "hardhat";
 import { keccak256, solidityPacked } from "ethers";
 import { StandardMerkleTree } from "@openzeppelin/merkle-tree";
 
-describe("MerkleAirdrop1", function () {
+describe("MerkleAirdrop", function () {
   async function deployFixture() {
     const [owner, addr1, addr2, addr3] = await ethers.getSigners();
 

@@ -8,6 +8,9 @@ This project implements a Merkle tree-based airdrop system using Solidity and Ha
    ```
    npm install csv-parser merkletreejs keccak256
    ```
+   ```
+   npm install @@openzeppelin/contracts
+   ```
 
 2. Prepare your `airdrop.csv` file with the following format:
    ```
@@ -17,9 +20,12 @@ This project implements a Merkle tree-based airdrop system using Solidity and Ha
    ```
 
 3. Run the script:
+   Before runing node merkle.js go to the `package.json` and add `"type": "modules"`  then run 
+
    ```
    node merkle.js
    ```
+   After running it remove it from your `package.json`
 
 4. The script will output the Merkle root and generate a `proofs.json` file.
 
@@ -29,10 +35,10 @@ This project implements a Merkle tree-based airdrop system using Solidity and Ha
 
 2. Deploy the contract using the following command:
    ```
-   npx hardhat run scripts/deploy.js --network <your-network>
+   npx hardhat ignition deploy ./ignition/modules/{nameOfTheFile} --network <your-network>
    ```
 
-   Replace `<your-network>` with your desired network (e.g., `localhost`, `rinkeby`, etc.).
+
 
 3. The deployment script should pass the ERC20 token address and the Merkle root to the constructor.
 
@@ -42,10 +48,7 @@ This project implements a Merkle tree-based airdrop system using Solidity and Ha
 
 2. To claim an airdrop, users need their address, amount, and the corresponding proof from `proofs.json`.
 
-3. Example claim function call:
-   ```javascript
-   await merkleAirdrop.claim(amount, proof);
-   ```
+
 
 ## Running Tests
 
@@ -57,8 +60,7 @@ npx hardhat test
 ## Assumptions and Limitations
 
 1. The CSV file is assumed to be well-formed and contain valid Ethereum addresses.
-2. The contract assumes that the ERC20 token has sufficient decimals to handle the amounts in the CSV file.
-3. The contract owner is responsible for funding the contract with tokens before users can claim.
+2. The contract owner is responsible for funding the contract with tokens before users can claim.
 4. Updating the Merkle root does not invalidate previous claims, so care should be taken when updating.
 
 ## Security Considerations
