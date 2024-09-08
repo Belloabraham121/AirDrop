@@ -27,7 +27,7 @@ fs.createReadStream("airdrop.csv")
       }
 
       // Write all proofs to a JSON file
-      fs.writeFileSync("proofs7.json", JSON.stringify(proofs, null, 2));
+      fs.writeFileSync("proofs.json", JSON.stringify(proofs, null, 2));
       console.log("All proofs have been saved to 'proofs.json'.");
       
     } catch (err) {

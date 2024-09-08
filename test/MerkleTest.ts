@@ -1,11 +1,11 @@
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { keccak256, solidityPacked } from "ethers";
 import { StandardMerkleTree } from "@openzeppelin/merkle-tree";
 
 describe("MerkleAirdrop", function () {
   async function deployFixture() {
+    
     const [owner, addr1, addr2, addr3] = await ethers.getSigners();
 
     // Deploy ERC20 token
