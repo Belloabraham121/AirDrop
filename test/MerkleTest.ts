@@ -61,6 +61,16 @@ describe("MerkleAirdrop", function () {
       airdrop.connect(addr2).ClaimAirdrop(proof, ethers.parseEther("100"))
     ).to.be.revertedWith("Invalid proof");
 
+  });
+
+  
+  it("Should reject if amount is wrong", async function () {
+    const { airdrop, addr1, addr2, merkleTree } = await loadFixture(deployFixture);
+
+    const leaf = [addr1.address, ethers.parseEther("100")];
+    const proof = merkleTree.getProof(leaf);
+
+
     // Try to claim with wrong amount
     await expect(
       airdrop.connect(addr1).ClaimAirdrop(proof, ethers.parseEther("200"))

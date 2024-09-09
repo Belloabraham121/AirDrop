@@ -16,8 +16,6 @@ contract MerkleAirdrop is Ownable{
 
     event AirdropClaimed(address indexed claimant, uint256 amount);
 
-
-    event ClaimSuccessful();
     
     constructor(address _token, bytes32 _merkleRoot) Ownable(msg.sender){
         token = IERC20(_token);
